@@ -3,14 +3,16 @@ title: Setting up an NGINX Load Balancer
 weight: 270
 aliases:
   - /rancher/v2.x/en/installation/ha/create-nodes-lb/nginx
+  - /rancher/v2.x/en/installation/k8s-install/create-nodes-lb/nginx
 ---
 
 NGINX will be configured as Layer 4 load balancer (TCP) that forwards connections to one of your Rancher nodes.
 
-> **Note:**
-> In this configuration, the load balancer is positioned in front of your nodes. The load balancer can be any host capable of running NGINX.
->
-> One caveat: do not use one of your Rancher nodes as the load balancer.
+In this configuration, the load balancer is positioned in front of your nodes. The load balancer can be any host capable of running NGINX.
+
+One caveat: do not use one of your Rancher nodes as the load balancer.
+
+> These examples show the load balancer being configured to direct traffic to three Rancher server nodes. If Rancher is installed on an RKE Kubernetes cluster, three nodes are required. If Rancher is installed on a K3s Kubernetes cluster, only two nodes are required.
 
 ## Install NGINX
 
@@ -34,20 +36,20 @@ After installing NGINX, you need to update the NGINX configuration file, `nginx.
     worker_rlimit_nofile 40000;
 
     events {
-    worker_connections 8192;
+        worker_connections 8192;
     }
 
     stream {
-    upstream rancher_servers_http {
-    least_conn;
-    server <IP_NODE_1>:80 max_fails=3 fail_timeout=5s;
-    server <IP_NODE_2>:80 max_fails=3 fail_timeout=5s;
-    server <IP_NODE_3>:80 max_fails=3 fail_timeout=5s;
-    }
-    server {
-    listen 80;
-    proxy_pass rancher_servers_http;
-    }
+        upstream rancher_servers_http {
+            least_conn;
+            server <IP_NODE_1>:80 max_fails=3 fail_timeout=5s;
+            server <IP_NODE_2>:80 max_fails=3 fail_timeout=5s;
+            server <IP_NODE_3>:80 max_fails=3 fail_timeout=5s;
+        }
+        server {
+            listen 80;
+            proxy_pass rancher_servers_http;
+        }
 
         upstream rancher_servers_https {
             least_conn;
@@ -61,10 +63,8 @@ After installing NGINX, you need to update the NGINX configuration file, `nginx.
         }
 
     }
-
     ```
 
-    ```
 
 3.  Save `nginx.conf` to your load balancer at the following path: `/etc/nginx/nginx.conf`.
 
